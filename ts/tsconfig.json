@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "outDir": "../src",
+    "typeRoots": [
+      "../node_modules/@types"
+    ],
+    "types": [
+      "webmidi"
+    ],
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+  }
+}
