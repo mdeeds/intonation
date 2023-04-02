@@ -74,8 +74,8 @@ exports.MidiFloat = MidiFloat;
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.MIDIOutputHelper = void 0;
-class MIDIOutputHelper {
+exports.MIDIHelper = void 0;
+class MIDIHelper {
     static async getDefaultOutput() {
         if (!navigator.requestMIDIAccess)
             throw new Error("Your browser does not support WebMIDI API");
@@ -92,9 +92,62 @@ class MIDIOutputHelper {
             }
         });
     }
+    static async getDefaultInput() {
+        if (!navigator.requestMIDIAccess)
+            throw new Error("Your browser does not support WebMIDI API");
+        const access = await navigator.requestMIDIAccess();
+        return new Promise((resolve, reject) => {
+            document.body.innerHTML = '';
+            for (const [name, i] of access.inputs.entries()) {
+                const button = document.createElement('button');
+                button.textContent = `${i.name} ${i.id} ${i.manufacturer} ${i.type}`;
+                button.addEventListener('click', function () {
+                    resolve(i);
+                }.bind(i));
+                document.body.appendChild(button);
+            }
+        });
+    }
 }
-exports.MIDIOutputHelper = MIDIOutputHelper;
+exports.MIDIHelper = MIDIHelper;
 //# sourceMappingURL=midiHelper.js.map
+
+/***/ }),
+
+/***/ 168:
+/***/ ((__unused_webpack_module, exports) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.MidiTruncate = void 0;
+class MidiTruncate {
+    lowNote;
+    constructor(lowNote, i, o) {
+        this.lowNote = lowNote;
+        document.body.innerHTML = `MIDI Truncate running ${lowNote}; In=${i.name} Out=${o.name}`;
+        i.addEventListener('midimessage', (e) => {
+            o.send(this.translate(e.data));
+        });
+    }
+    translate(data) {
+        if (data.length < 3) {
+            return data;
+        }
+        let code = data[0] & 0xf0;
+        if (code == 0x80 || code == 0x90) {
+            const newData = new Uint8Array(data);
+            const oldKey = data[1];
+            const newKey = ((oldKey - this.lowNote + 8 * 12) % 12) + this.lowNote;
+            newData[1] = newKey;
+            return newData;
+        }
+        else {
+            return data;
+        }
+    }
+}
+exports.MidiTruncate = MidiTruncate;
+//# sourceMappingURL=midiTruncate.js.map
 
 /***/ }),
 
@@ -319,14 +372,37 @@ var __webpack_unused_export__;
 
 __webpack_unused_export__ = ({ value: true });
 const midiHelper_1 = __webpack_require__(398);
+const midiTruncate_1 = __webpack_require__(168);
 const touchCanvas_1 = __webpack_require__(448);
 document.body.innerHTML = '';
 const button = document.createElement('button');
 button.textContent = 'Begin!';
 button.addEventListener('click', async () => {
     const audioContext = new AudioContext();
-    const o = await midiHelper_1.MIDIOutputHelper.getDefaultOutput();
-    const tc = new touchCanvas_1.TouchCanvas(audioContext, o);
+    const o = await midiHelper_1.MIDIHelper.getDefaultOutput();
+    document.body.innerHTML = '';
+    const i = await midiHelper_1.MIDIHelper.getDefaultInput();
+    document.body.innerHTML = '';
+    {
+        const b = document.createElement('button');
+        b.textContent = 'TouchCanvas';
+        b.addEventListener('click', () => { new touchCanvas_1.TouchCanvas(audioContext, o); });
+        document.body.appendChild(b);
+    }
+    {
+        const b = document.createElement('button');
+        b.textContent = 'MIDI Truncate';
+        // https://newt.phys.unsw.edu.au/jw/notes.html
+        // B3 59
+        // C4 60
+        // D4 62
+        // E4 64
+        // F4 65
+        // G4 67
+        // A4 69 
+        b.addEventListener('click', () => { new midiTruncate_1.MidiTruncate(/*lowNote=*/ 59, i, o); });
+        document.body.appendChild(b);
+    }
 });
 document.body.appendChild(button);
 //# sourceMappingURL=index.js.map
