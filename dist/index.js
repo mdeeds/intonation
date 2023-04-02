@@ -400,7 +400,9 @@ button.addEventListener('click', async () => {
         // F4 65
         // G4 67
         // A4 69 
-        b.addEventListener('click', () => { new midiTruncate_1.MidiTruncate(/*lowNote=*/ 59, i, o); });
+        b.addEventListener('click', () => {
+            new midiTruncate_1.MidiTruncate(/*lowNote=*/ 59, i, o);
+        });
         document.body.appendChild(b);
     }
 });
